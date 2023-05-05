@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>W3W</title>
+  <script src='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js/dist/goong-js.js'></script>
+  <link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js/dist/goong-js.css' rel='stylesheet' />
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+
+<body>
+  <div id='map' style='width: 100w; height: 100vh;'>
+    <div class="goong-search">
+      <input type="text" onkeyup="onSearch()" id="w3w" class="goong-input" placeholder=" PLease enter here">
+    </div>
+    <div id="content" class="content"></div>
+  </div>
+  <script>
+    goongjs.accessToken = '8ysglkOy3Z5WaSKuIEKpwFk8OLfgFFHmi39kYLpb';
+    var map = new goongjs.Map({
+      container: 'map',
+      style: 'https://tiles.goong.io/assets/goong_map_web.json', // stylesheet location
+      center: [105.83991, 21.02800], // starting position [lng, lat]
+      zoom: 9 // starting zoom
+    });
+
+    function onSearch() {
+      let value = document.getElementById('w3w').value
+      let baseUrl = `http://40.90.170.197:9090/place/w3w`
+      let key = `qsy0OS8PcbxbmdNzOn8Gy0mSEdg4trKTgtcUD5DN`
+      let url = `${baseUrl}/autocomplete?api_key=${key}&input=${value}`
+      if (value) {
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            let object = data.w3w
+            if (object) {
+              document.getElementById('content').innerHTML = object.suggestions.map(e =>
+                `<div class="item">
+                <img src="https://goong.io/wp-content/themes/Goong/assets/img/footer-1.svg" alt="" loading="lazy">
+                <div>
+                <p class="words" id="location">${e.words}</p>
+                <p class="nearestPlace" id="location">${e.nearestPlace}</p>
+                </div>
+                </div>`
+              );
+              let item = document.querySelectorAll('.item')
+              for (i = 0; i < item.length; i++) {
+                item[i].addEventListener('click', function (e) {
+                  let address = e.target.previousElementSibling.innerText
+                  let targetUrl = `${baseUrl}/geocode?address=${address}`
+                  fetch(targetUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                      let coor = data.w3w.coordinates
+                      console.log(`data`, data.w3w.coordinates)
+                      map.flyTo({
+                        center: [
+                          coor.lng,
+                          coor.lat
+                        ],
+                        zoom: 9,
+                        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+                      });
+                      var marker = new goongjs.Marker()
+                        .setLngLat([coor.lng, coor.lat])
+                        .addTo(map);
+                      document.getElementById('content').innerHTML = ""
+                      document.getElementById('w3w').value = e.target.innerText
+                    })
+                })
+
+              }
+            }
+          })
+          .catch(error => console.error(error));
+      }
+    }
+
+  </script>
+  <style>
+    body,
+    html {
+      margin: 0;
+    }
+
+    .goong-search {
+      position: fixed;
+      top: 25px;
+      left: 25px;
+    }
+
+    .goong-input {
+      width: 350px;
+      height: 35px;
+      outline: none;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 2px 2px 5px 2px #c2c2c2;
+      padding-left: 10px;
+    }
+
+    .content {
+      position: fixed;
+      top: 75px;
+      left: 25px;
+      width: 345px;
+      padding-left: 10px;
+      padding-right: 10px;
+      border-radius: 5px;
+      background-color: white;
+      box-shadow: 2px 2px 5px #c2c2c2;
+    }
+
+    .item {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .words {
+      cursor: pointer;
+      width: 320px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: #000;
+      margin: 0;
+    }
+
+    .nearestPlace {
+      cursor: pointer;
+      width: 320px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: grey;
+      margin: 0;
+    }
+  </style>
+</body>
+
+</html>
